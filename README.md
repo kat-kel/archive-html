@@ -99,6 +99,7 @@ flowchart TB
 ```
 
 ## Clean Data
+The program then parses the CLI arguments and prepares a clean, working file to which information about the archived HTML will be added.
 ```mermaid
 flowchart TB
     A("--archive") --> Aq{directory\nexists}
@@ -164,5 +165,7 @@ flowchart TB
     rows --> 1[/id/]
     rows --> 2[/normalized_url/]
     rows --> 3[/domain/]
-    rows --> 4[/other_fields_from_infile/]
+    rows -->|empty| 5[/archive_subdirectory/]
+    rows -->|empty| 6[/archive_timestamp/]
+    rows -->|if relevant| 4[/other_fields_from_infile/]
 ```
