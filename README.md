@@ -5,7 +5,7 @@ The program `archive-html` takes a list (CSV file) of URLs and enriches each row
 1. **metadata about the URL**
     - normalized version of the URL
     - domain name
-2. **archive**:
+2. **data about the archived HTML**:
     - name of a sub-directory which contains a file of the page's scraped HTML
     - timestamp of when the HTML was scraped and archived
 
@@ -59,7 +59,7 @@ The in-file CSV may contain many other columns and metadata, but the program `ar
 |qvsfbq6yfkwgtm3|twitter.com/bu_unistra/status/1592121602480955392|huma-num.fr|
 |2gm269lmsapwn49|dariah.eu/2022/10/10/mutual-learning-workshop-for-improving-cultural-heritage-bibliographical-data|dariah.eu|
 
-No data existing in the in-file will be missing from the enriched out-file.
+All data existing in the in-file will be reproduced in the enriched out-file. This program can be used to both archive HTML and add data about the archiving process to an existing dataset with many headers and metadata attached to a URL.
 
 ## Output
 The program `archive-html` generates two types of files. 
