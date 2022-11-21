@@ -212,10 +212,10 @@ end
 subgraph Normalized URL
     normalized_col[/normalized_url_col/]
     row --> normalized
-    normalized_col --> normalized{"row[normalized_url_col]"}
+    normalized_col --> normalized{"row.get(normalized_url_col)"}
     style normalized fill:#ffff00
-    normalized -->|True| normUrl["row[normalized_url_col]"]
-    normalized -->|False| notNormUrl["normalize_url(row[url_col])"]
+    normalized -->|string| normUrl["row[normalized_url_col]"]
+    normalized -->|None| notNormUrl["normalize_url(row[url_col])"]
     normalized_url[/normalized_url/]
     notNormUrl -->|update row| writeNorm["row[normalized_url_col]=normalized_url"]
     normUrl --> normalized_url
@@ -223,7 +223,7 @@ subgraph Normalized URL
 end
 subgraph Domain
     domain_col[/domain_col/]
-    domain_col -->domains{"row[domain_col]"}
+    domain_col -->domains{"row.get(domain_col)"}
     row --> domains
     style domains fill:#ffff00
     domains -->|string| yesDom["row[domain_col]"]
