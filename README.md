@@ -202,7 +202,13 @@ Enrichment steps:
 
 1. If `normalized` is False, the program normalizes the URL in `row[url_col]`.
 2. If there's no data in the column known under the variable `domain_col`, the program gets the domain name from the normalized URL.
-3. The program also writes these data to the relevant fields if they did not already exist in the input dataset.
+3. The program also writes these data to the relevant fields if they did not already exist in the dataset.
+
+Parameters
+- `row` (dict) in `csv.DictReader`
+- `normalized_url_col` (str)
+- `url_col` (str)
+- `domain` (str)
 
 ```mermaid
 flowchart LR
@@ -211,11 +217,13 @@ row[/row/]
 end
 subgraph Normalized URL
     normalized_col[/normalized_url_col/]
+    url_col[/url_col/]
     row --> normalized
     normalized_col --> normalized{"row.get(normalized_url_col)"}
     style normalized fill:#ffff00
     normalized -->|string| normUrl["row[normalized_url_col]"]
     normalized -->|None| notNormUrl["normalize_url(row[url_col])"]
+    url_col --> notNormUrl
     normalized_url[/normalized_url/]
     notNormUrl -->|update row| writeNorm["row[normalized_url_col]=normalized_url"]
     normUrl --> normalized_url
@@ -226,13 +234,10 @@ subgraph Domain
     domain_col -->domains{"row.get(domain_col)"}
     row --> domains
     style domains fill:#ffff00
-    domains -->|string| yesDom["row[domain_col]"]
-    yesDom --> domain_name
-    domain_name[/domain/]
+    domains --o|string| yesDom["row[domain_col]"]
     domains -->|None| noDom["get_domain(normalized_url)"]
     normalized_url --> noDom
     noDom -->|update row| writeDom["row[domain_col]=domain"]
-    noDom --> domain_name
     
 end
 
@@ -249,3 +254,17 @@ Archiving steps:
 6. The current time is recorded and given to the field `archive_timestamp`.
 7. The hash of the normalized URL is given to the field `archive_subdirectory`.
 
+Parameters:
+- `row` (dict) in `csv.DictReader`
+- `archive` (str)
+- `normalized_url_col` (str)
+
+```mermaid
+flowchart TD
+    hash_url[hash normalized URL] --> checkDir[check archive for hash]
+    checkDir --> scrape[scrape HTML]
+    scrape --> makeDir[make a subdirectory with name of hash]
+    makeDir --> write[write HTML to file in subdirectory]
+    write --> timestamp[write timestamp to enriched CSV]
+    timestamp --> hash_name[write subdirectory name to enriched CSV]
+```
