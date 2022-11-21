@@ -137,7 +137,7 @@ flowchart TB
     style Hy fill:#00ff00
     style Hq fill:#ffff00
 
-    fieldnames --> IDq{--ids in fieldnames}
+    p --> IDq{--ids in fieldnames}
     IDq -->|no| IDno[error]
     IDq -->|yes| IDyes[continue]
     style IDno fill:#ff0000
@@ -156,28 +156,43 @@ flowchart TB
 
     URLyes --> Norm{-n \nboolean}
     style Norm fill:#ffff00
-    Norm -->|False| Normno[/normalized = False/]
-    enriched["enriched_fieldnames = []"]
     Norm -->|True| Normyes{first URL in\ncolumn --urls\nis normalized}
     style Normyes fill:#ffff00
-    Normyes -->|no| Normno
-    Normyes -->|yes| Nyes[/normalized = True/]
+    Normyes -->|yes| Nyes[/normalized_url_col = url_col/]
+    Norm -->|False| makeNorm["enriched_fieldnames + ['normalized_url_col']"]
+    makeNorm --> returnNoNorm[/"normalized_url_col = 'normalized_url_col'"/]
+    Normyes -->|no| makeNorm
     
-    enriched --> makeNorm
-    Normno --> makeNorm["enriched_fieldnames + ['normalized_url_col']"]
-    
+    emptyEnriched["enriched_fieldnames = []"]
+    enriched[/enriched_fieldnames/]
+    emptyEnriched --> enriched
+
     URLyes -->Dom{--domains\noption}
     style Dom fill:#ffff00
-
     Dom -->|False| makeDom["enriched_fieldnames + ['domain_col']"]
-
+    
     Dom -->|True| Dom_header{--domains in\nfieldnames}
     Dom_header -->|no| makeDom
     Dom_header -->|yes| Domyes[/domain_col = --domains/]
     style Dom_header fill:#ffff00
 
+    enriched --> makeNorm
     enriched --> makeDom
+
+    makeDom --> returnEnriched[/enriched_fieldnames/]
+    makeNorm --> returnEnriched
+
+    makeDom --> returnDom[/"domain_col = 'domain_col'"/]
 ```
+Return: 
+
+- `archive` : path to directory
+- `infile` : path to file
+- `infile_fieldnames` : list of headers in file
+- `enriched_fieldnames` : list of headers to be added to `infile_fieldnames` ("domain_col" and/or "normalized_url_col")
+- `url_col` : string of key for the column containing URLs in file when read as `csv.DictReader` object
+- `domain_col` string of key for the column containing domain names in file when read as `csv.DictReader` object (set to "domain_col" when the in-file did not have domain names)
+- `normalized_url_col` : string of key for the column containing normalized_urls in file when read as `csv.DictReader` object (the value of `nonrmalized_url_col` will be the same as `url_col` if the URLs are already normalized)
 
 ## Parse In-File
 
@@ -191,10 +206,15 @@ Enrichment steps:
 
 ```mermaid
 flowchart LR
+subgraph Row
+row[/row/]
+end
 subgraph Normalized URL
-    normalized{normalized}
+    normalized_col[/normalized_url_col/]
+    row --> normalized
+    normalized_col --> normalized{"row[normalized_url_col]"}
     style normalized fill:#ffff00
-    normalized -->|True| normUrl["row[url_col]"]
+    normalized -->|True| normUrl["row[normalized_url_col]"]
     normalized -->|False| notNormUrl["normalize_url(row[url_col])"]
     normalized_url[/normalized_url/]
     notNormUrl -->|update row| writeNorm["row[normalized_url_col]=normalized_url"]
@@ -204,6 +224,7 @@ end
 subgraph Domain
     domain_col[/domain_col/]
     domain_col -->domains{"row[domain_col]"}
+    row --> domains
     style domains fill:#ffff00
     domains -->|string| yesDom["row[domain_col]"]
     yesDom --> domain_name
