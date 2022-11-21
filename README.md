@@ -70,8 +70,7 @@ The program `archive-html` generates two types of files.
 |--|--|--|--|--|
 |tcbeehb0040dumd|medialab.sciencespo.fr/activites/epo|medialab.sciencespo.fr|8b058b21fea0cd4d36368998dc1b18a5|2022-11-18 14:53:44.844199|
 
-2. Second, inside an archive whose path the user provides from the Command Line, the program `archive-html` produces sub-directories for each URL succesfully scraped and archived.
-    - example: `archive/8b058b21fea0cd4d36368998dc1b18a5/8b058b21fea0cd4d36368998dc1b18a5.html`
+2. Second, the program produces sub-directories for each URL succesfully scraped and archived. For example, if the user gave the option `--archive ./archive/` in the command, line, the HTML of the URL https://medialab.sciencespo.fr/activites/epo/ would be stored in the directory `./archive/8b058b21fea0cd4d36368998dc1b18a5/`
 
 ### *wish-list*:
 3. *We would like to also resolve URLs discovered in the scraped HTML and save them to a CSV in the archived URL's sub-directory.*
@@ -84,7 +83,7 @@ The program `archive-html` generates two types of files.
 The program will except 6 arguments.
 - `--archive` (**required**, dir) : path to the main archive directory
 - `--infile` (**required**, file) : path to the in-file CSV
-- `--urls` (**required**, str) : name of column containing the URLs to be processed
+- `--urls` (**required**, str) : name of column containing the URLs to be processed; if normalized URLs are in the dataset this should point to the column of the normalized URLs
 - `--ids` (**required**, str) : name of column of the URLs' IDs
 - `--domains` (*optional*, str) : name of column of the domain names, if present
 - `-n` (*optional*, bool) : True if the given URLs are already normalized
@@ -99,8 +98,18 @@ flowchart TB
     CLI --o|"-n"| id[normalized/\nnot normalized]
 ```
 
-## Clean Data
-The program then parses the CLI arguments and prepares a clean, working file to which information about the archived HTML will be added. See the product of this decision tree: `clean row`
+## Parse CLI Arguments
+As shown in the decision tree below, the program parses the CLI arguments to determine how it will process the incoming data file. The initial parsing of the CLI arguments as well as a peek at the headers and first row of data confirms the following information:
+
+- all the headers of the incoming CSV file : `infile_fieldnames` (list)
+- the header of the column containing the IDs: `id_col` (string)
+- the header of the column containing the URLs : `url_col` (string)
+- whether that column's URLs are normalized or not : `normalized` (boolean)
+- if present, the header of the column containing the domain names: `domain_col` (string)
+
+To the list of headers in `infile_fieldnames`, the following column headers are added if certain conditions are met:
+- if the URLs are not normalized, the header name `normalized_url_col` is added to list `enriched_fieldnames`
+- if a column containing domain names is not present, the header name `domain_col` is added to the list `enriched_fieldnames`
 
 ```mermaid
 flowchart TB
@@ -123,12 +132,10 @@ flowchart TB
     Hq -->|no| Hn[error]
     Hq -->|yes| Hy[continue]
     Hy --> p[parse all\nheaders]
-    p --> fieldnames[/fieldnames/]
+    p --> fieldnames[/infile_fieldnames/]
     style Hn fill:#ff0000
     style Hy fill:#00ff00
     style Hq fill:#ffff00
-
-    fieldnames -->|add existing data\nfrom dictionary\nof fieldnames,\nexcept normalized URL\nand domain name| rows[/clean row/]
 
     fieldnames --> IDq{--ids in fieldnames}
     IDq -->|no| IDno[error]
@@ -138,36 +145,86 @@ flowchart TB
     style IDyes fill:#00ff00
     
     IDyes --> URL_header{--urls in\nfieldnames}
-    URL_header -->|no| URLno[error]
+    IDyes --> IDdata[/id_col = --ids/]
+    
     URL_header -->|yes| URLyes[continue]
+    URLyes --> URLdata[/url_col = --urls/]
+    URL_header -->|no| URLno[error]
     style URLno fill:#ff0000
     style URLyes fill:#00ff00
     style URL_header fill:#ffff00
 
     URLyes --> Norm{-n \nboolean}
     style Norm fill:#ffff00
-    Norm -->|False| Normno[normalize\nURL]
-    Norm -->|True| Normyes[extract\nnormalized\nURL]
+    Norm -->|False| Normno[/normalized = False/]
+    enriched["enriched_fieldnames = []"]
+    Norm -->|True| Normyes{first URL in\ncolumn --urls\nis normalized}
+    style Normyes fill:#ffff00
+    Normyes -->|no| Normno
+    Normyes -->|yes| Nyes[/normalized = True/]
+    
+    enriched --> makeNorm
+    Normno --> makeNorm["enriched_fieldnames + ['normalized_url_col']"]
     
     URLyes -->Dom{--domains\noption}
     style Dom fill:#ffff00
 
-    Dom -->|False| no_dom[get\ndomain]
+    Dom -->|False| makeDom["enriched_fieldnames + ['domain_col']"]
 
     Dom -->|True| Dom_header{--domains in\nfieldnames}
-    Dom_header -->|no| no_dom
-    Dom_header -->|yes| Domyes[extract domain]
+    Dom_header -->|no| makeDom
+    Dom_header -->|yes| Domyes[/domain_col = --domains/]
     style Dom_header fill:#ffff00
 
-    Normno --> rows
-    Normyes --> rows
-    no_dom -->rows
-    Domyes -->rows
-
-    rows --> 1[/id/]
-    rows --> 2[/normalized_url/]
-    rows --> 3[/domain/]
-    rows -->|empty| 5[/archive_subdirectory/]
-    rows -->|empty| 6[/archive_timestamp/]
-    rows -->|if relevant| 4[/other_fields_from_infile/]
+    enriched --> makeDom
 ```
+
+## Parse In-File
+
+Next, the program parses the entire incoming CSV file, row by row, both enriching the row's URL as well as fetching and archiving its HTML.
+
+Enrichment steps:
+
+1. If `normalized` is False, the program normalizes the URL in `row[url_col]`.
+2. If there's no data in the column known under the variable `domain_col`, the program gets the domain name from the normalized URL.
+3. The program also writes these data to the relevant fields if they did not already exist in the input dataset.
+
+```mermaid
+flowchart LR
+subgraph Normalized URL
+    normalized{normalized}
+    style normalized fill:#ffff00
+    normalized -->|True| normUrl["row[url_col]"]
+    normalized -->|False| notNormUrl["normalize_url(row[url_col])"]
+    normalized_url[/normalized_url/]
+    notNormUrl -->|update row| writeNorm["row[normalized_url]=normalized_url"]
+    normUrl --> normalized_url
+    notNormUrl --> normalized_url
+end
+subgraph Domain
+    domain_col[/domain_col/]
+    domain_col -->domains{"row[domain_col]"}
+    style domains fill:#ffff00
+    domains -->|string| yesDom["row[domain_col]"]
+    yesDom --> domain_name
+    domain_name[/domain/]
+    domains -->|None| noDom["get_domain(normalized_url)"]
+    normalized_url --> noDom
+    noDom -->|update row| writeDom["row[domain_col]=domain"]
+    noDom --> domain_name
+    
+end
+
+
+```
+
+Archiving steps:
+
+3. The program creates a hash of the normalized URL.
+4. It then searches in the archive directory for any sub-directories bearing that name.
+5. If there are no subdirectories with that name, the program attempts to call the URL with the concatenation of `https://` and `normalized_url`.
+4. If the call is unsuccessful, the problematic URL is logged along with its domain name, and the program moves onto the next URL.
+5. If the call is successful, the program attempts to scrape the HTML from the page and write the response to a file in the subdirectory.
+6. The current time is recorded and given to the field `archive_timestamp`.
+7. The hash of the normalized URL is given to the field `archive_subdirectory`.
+
