@@ -44,22 +44,20 @@ hash_of_url = md5(str.encode(normalized_url)).hexdigest()
 The in-file must (a) be a CSV (b) with headers and (c) have a column with a URL's unique ID and a column with the URL itself.
 
 ### **Minimum Requirements of the In-File:**
-|id||url|
-|--|-|--|
-|tcbeehb0040dumd||https://medialab.sciencespo.fr/activites/epo/|
-|qvsfbq6yfkwgtm3||https://twitter.com/bu_unistra/status/1592121602480955392|
-|2gm269lmsapwn49||https://www.dariah.eu/2022/10/10/mutual-learning-workshop-for-improving-cultural-heritage-bibliographical-data/|
-||||
+|id|url|
+|--|--|
+|tcbeehb0040dumd|https://medialab.sciencespo.fr/activites/epo/|
+|qvsfbq6yfkwgtm3|https://twitter.com/bu_unistra/status/1592121602480955392|
+|2gm269lmsapwn49|https://www.dariah.eu/2022/10/10/mutual-learning-workshop-for-improving-cultural-heritage-bibliographical-data/|
 
 
 ### **Maximum Elements of the In-File Taken into Account**
 The in-file CSV can contain many columns and metadata, but the program `archive-html` will only take into account the following data:
 |id||normalized_url||domain|
-|--|-|--|-|--|
-|tcbeehb0040dumd||medialab.sciencespo.fr/activites/epo||medialab.sciencespo.fr|
-|qvsfbq6yfkwgtm3||twitter.com/bu_unistra/status/1592121602480955392||huma-num.fr|
-|2gm269lmsapwn49||dariah.eu/2022/10/10/mutual-learning-workshop-for-improving-cultural-heritage-bibliographical-data||dariah.eu|
-||||||
+|--|--|--|
+|tcbeehb0040dumd|medialab.sciencespo.fr/activites/epo|medialab.sciencespo.fr|
+|qvsfbq6yfkwgtm3|twitter.com/bu_unistra/status/1592121602480955392|huma-num.fr|
+|2gm269lmsapwn49|dariah.eu/2022/10/10/mutual-learning-workshop-for-improving-cultural-heritage-bibliographical-data|dariah.eu|
 
 
 ## The Out-Files
@@ -70,7 +68,6 @@ The program `archive-html` generates two types of files.
 |id|normalized_url|domain|archive_subdirectory|archive_timestamp|
 |--|--|--|--|--|
 |tcbeehb0040dumd|medialab.sciencespo.fr/activites/epo|medialab.sciencespo.fr|8b058b21fea0cd4d36368998dc1b18a5|2022-11-18 14:53:44.844199|
-||||||
 
 2. Second, inside an archive whose path the user provides from the Command Line, the program `archive-html` produces sub-directories for each URL succesfully scraped and archived.
     - example: `archive/8b058b21fea0cd4d36368998dc1b18a5/8b058b21fea0cd4d36368998dc1b18a5.html`
@@ -95,10 +92,10 @@ The program will except 6 arguments.
 flowchart TB
     CLI -->|"--archive"| archive[(archive)]
     CLI -->|"--infile"| infile[/in-file/]
-    CLI -->|"--urls"| header1(URL col. header\nstring)
-    CLI -->|"--ids"| header3(ID col. header\nstring)
-    CLI -->|"--domains"| header2(ID col. header\nstring)
-    CLI --o|"-n"| id[normalized/\nnot normalized\nboolean]
+    CLI -->|"--urls"| header1(URL col. header)
+    CLI -->|"--ids"| header3(ID col. header)
+    CLI -->|"--domains"| header2(domains col. header)
+    CLI --o|"-n"| id[normalized/\nnot normalized]
 ```
 
 ## Clean Data
