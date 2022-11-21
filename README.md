@@ -11,7 +11,7 @@ The program `archive-html` takes a list (CSV file) of URLs and enriches each row
 
 # Proposed Data Structure
 
-From the Command Line (CLI), the user provides a path to the archive which will store the scraped HTML, a path to the in-file which contains the URLs and their IDs, as well as the header names of the 2 mandatory columns: IDs and URLs. As shown in the diagram below, the path to the archive and the path to the in-file CSV are used to create each archived URL's sub-directory and the enriched out-file, respectively.
+From the Command Line (CLI), the user provides (1) a path to the archive which will store the scraped HTML, (2) a path to the in-file which contains the URLs and their IDs, as well as the header names of the two mandatory columns: (3) IDs and (4) URLs.
 
 ```mermaid
 flowchart LR
@@ -41,7 +41,7 @@ hash_of_url = md5(str.encode(normalized_url)).hexdigest()
 ```
 
 ## The In-File
-The in-file must (a) be a CSV (b) with headers and (c) have a column with a URL's unique ID and a column with the URL itself.
+The in-file must be a CSV with headers and have at least the following 2 columns: ID and URL.
 
 ### **Minimum Requirements of the In-File:**
 |id|url|
@@ -52,15 +52,16 @@ The in-file must (a) be a CSV (b) with headers and (c) have a column with a URL'
 
 
 ### **Maximum Elements of the In-File Taken into Account**
-The in-file CSV can contain many columns and metadata, but the program `archive-html` will only take into account the following data:
+The in-file CSV may contain many other columns and metadata, but the program `archive-html` will only parse the following data:
 |id|normalized_url|domain|
 |--|--|--|
 |tcbeehb0040dumd|medialab.sciencespo.fr/activites/epo|medialab.sciencespo.fr|
 |qvsfbq6yfkwgtm3|twitter.com/bu_unistra/status/1592121602480955392|huma-num.fr|
 |2gm269lmsapwn49|dariah.eu/2022/10/10/mutual-learning-workshop-for-improving-cultural-heritage-bibliographical-data|dariah.eu|
 
+No data existing in the in-file will be missing from the enriched out-file.
 
-## The Out-Files
+## Output
 The program `archive-html` generates two types of files. 
 
 1. First, it produces an enriched CSV, which rewrites all the existing data from the in-file and adds data about the archived HTML. In the case of a simple in-file with a raw URL (https://medialab.sciencespo.fr/activites/epo/) and its ID (tcbeehb0040dumd), the out-file would look like the following:
@@ -99,7 +100,8 @@ flowchart TB
 ```
 
 ## Clean Data
-The program then parses the CLI arguments and prepares a clean, working file to which information about the archived HTML will be added.
+The program then parses the CLI arguments and prepares a clean, working file to which information about the archived HTML will be added. See the product of this decision tree: `clean row`
+
 ```mermaid
 flowchart TB
     A("--archive") --> Aq{directory\nexists}
