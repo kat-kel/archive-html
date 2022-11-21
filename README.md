@@ -197,7 +197,7 @@ subgraph Normalized URL
     normalized -->|True| normUrl["row[url_col]"]
     normalized -->|False| notNormUrl["normalize_url(row[url_col])"]
     normalized_url[/normalized_url/]
-    notNormUrl -->|update row| writeNorm["row[normalized_url]=normalized_url"]
+    notNormUrl -->|update row| writeNorm["row[normalized_url_col]=normalized_url"]
     normUrl --> normalized_url
     notNormUrl --> normalized_url
 end
