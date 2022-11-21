@@ -53,7 +53,7 @@ The in-file must (a) be a CSV (b) with headers and (c) have a column with a URL'
 
 ### **Maximum Elements of the In-File Taken into Account**
 The in-file CSV can contain many columns and metadata, but the program `archive-html` will only take into account the following data:
-|id||normalized_url||domain|
+|id|normalized_url|domain|
 |--|--|--|
 |tcbeehb0040dumd|medialab.sciencespo.fr/activites/epo|medialab.sciencespo.fr|
 |qvsfbq6yfkwgtm3|twitter.com/bu_unistra/status/1592121602480955392|huma-num.fr|
