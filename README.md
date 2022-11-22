@@ -175,7 +175,8 @@ end
     setNoNormalizedURLCol --> returnNoNormalizedURL[/normalized_url_col/]
     style returnNoNormalizedURL fill:#8000fe
 
-    makeEmptyEnrichedFieldnames["enriched_fieldnames = []"]
+    makeEmptyEnrichedFieldnames["enriched_fieldnames.extend(infile_fieldnames)"]
+    fieldnames --> makeEmptyEnrichedFieldnames
     emptyEnrichedFieldnames[/enriched_fieldnames/]
     makeEmptyEnrichedFieldnames --> emptyEnrichedFieldnames
     emptyEnrichedFieldnames --> addNormalizedURLCol
@@ -201,16 +202,16 @@ end
 
 ```python
 class Parameters(object):
-    """Realizes the decision tree above in the diagram above"""
+    """Realizes the decision tree in the diagram above"""
     def __init__(self, archive, infile, urls, domains, n)
-    self.archive_path = archive
-    self.infile = infile
+    self.archive_path = archive  # IMPORTANT
+    self.infile = infile  # IMPORTANT
     self.url_col = urls
-    self.self.domain_col = domains
+    self.self.domain_col = domains  # IMPORTANT
     self.normalized = n
-    self.normalized_url_col = None
+    self.normalized_url_col = None  # IMPORTANT
     self.infile_fieldnames = []
-    self.enriched_fieldnames = []
+    self.enriched_fieldnames = []  # IMPORTANT
 
 ```
 
