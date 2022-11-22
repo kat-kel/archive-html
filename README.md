@@ -99,100 +99,108 @@ flowchart TB
 ```
 
 ## Parse CLI Arguments
-As shown in the decision tree below, the program parses the CLI arguments to determine how it will process the incoming data file. The initial parsing of the CLI arguments as well as a peek at the headers and first row of data confirms the following information:
+As shown in the decision tree below, the program parses the CLI arguments to determine how it will process the incoming data file.
 
-- all the headers of the incoming CSV file : `infile_fieldnames` (list)
-- the header of the column containing the IDs: `id_col` (string)
-- the header of the column containing the URLs : `url_col` (string)
-- whether that column's URLs are normalized or not : `normalized` (boolean)
-- if present, the header of the column containing the domain names: `domain_col` (string)
-
-To the list of headers in `infile_fieldnames`, the following column headers are added if certain conditions are met:
-- if the URLs are not normalized, the header name `normalized_url_col` is added to list `enriched_fieldnames`
-- if a column containing domain names is not present, the header name `domain_col` is added to the list `enriched_fieldnames`
-
-```mermaid
-flowchart TB
-    A("--archive") --> Aq{directory\nexists}
-    Aq-->|no| An[error]
-    Aq -->|yes| Ay[continue]
-    style An fill:#ff0000
-    style Ay fill:#00ff00
-    style Aq fill:#ffff00
-    
-    Ay -->F("--in-file")
-    F --> Fq{file\nexists}
-    Fq-->|no| Fn[error]
-    Fq -->|yes| Fy[continue]
-    style Fn fill:#ff0000
-    style Fy fill:#00ff00
-    style Fq fill:#ffff00
-    
-    Fy -->Hq{has\nheaders}
-    Hq -->|no| Hn[error]
-    Hq -->|yes| Hy[continue]
-    Hy --> p[parse all\nheaders]
-    p --> fieldnames[/infile_fieldnames/]
-    style Hn fill:#ff0000
-    style Hy fill:#00ff00
-    style Hq fill:#ffff00
-
-    p --> IDq{--ids in fieldnames}
-    IDq -->|no| IDno[error]
-    IDq -->|yes| IDyes[continue]
-    style IDno fill:#ff0000
-    style IDq fill:#ffff00
-    style IDyes fill:#00ff00
-    
-    IDyes --> URL_header{--urls in\nfieldnames}
-    IDyes --> IDdata[/id_col = --ids/]
-    
-    URL_header -->|yes| URLyes[continue]
-    URLyes --> URLdata[/url_col = --urls/]
-    URL_header -->|no| URLno[error]
-    style URLno fill:#ff0000
-    style URLyes fill:#00ff00
-    style URL_header fill:#ffff00
-
-    URLyes --> Norm{-n \nboolean}
-    style Norm fill:#ffff00
-    Norm -->|True| Normyes{first URL in\ncolumn --urls\nis normalized}
-    style Normyes fill:#ffff00
-    Normyes -->|yes| Nyes[/normalized_url_col = url_col/]
-    Norm -->|False| makeNorm["enriched_fieldnames + ['normalized_url_col']"]
-    makeNorm --> returnNoNorm[/"normalized_url_col = 'normalized_url_col'"/]
-    Normyes -->|no| makeNorm
-    
-    emptyEnriched["enriched_fieldnames = []"]
-    enriched[/enriched_fieldnames/]
-    emptyEnriched --> enriched
-
-    URLyes -->Dom{--domains\noption}
-    style Dom fill:#ffff00
-    Dom -->|False| makeDom["enriched_fieldnames + ['domain_col']"]
-    
-    Dom -->|True| Dom_header{--domains in\nfieldnames}
-    Dom_header -->|no| makeDom
-    Dom_header -->|yes| Domyes[/domain_col = --domains/]
-    style Dom_header fill:#ffff00
-
-    enriched --> makeNorm
-    enriched --> makeDom
-
-    makeDom --> returnEnriched[/enriched_fieldnames/]
-    makeNorm --> returnEnriched
-
-    makeDom --> returnDom[/"domain_col = 'domain_col'"/]
-```
-Return: 
-
-- `archive` : path to directory
-- `infile` : path to file
+Returns:
+- `archive_path` : path to directory
+- `infile_path` : path to file
 - `infile_fieldnames` : list of headers in file
 - `enriched_fieldnames` : list of headers to be added to `infile_fieldnames` ("domain_col" and/or "normalized_url_col")
+- `id_col` : string of key for the column containing IDs in the file when read as `csv.DictReader` object
 - `url_col` : string of key for the column containing URLs in file when read as `csv.DictReader` object
 - `domain_col` string of key for the column containing domain names in file when read as `csv.DictReader` object (set to "domain_col" when the in-file did not have domain names)
 - `normalized_url_col` : string of key for the column containing normalized_urls in file when read as `csv.DictReader` object (the value of `nonrmalized_url_col` will be the same as `url_col` if the URLs are already normalized)
+
+When parsing the dataset, the program will call columns using strings stored in the variables `url_col`, `domain_col`, `normalized_url_col`, and `id_col`. The column name for the normalized URLs will be the same as that entered via the CLI in the option `--urls` (stored in `url_col`) if the URLs in the dataset are already normalized. If the URLs are not normalized, the program will create a column `normalized_url_col` and, while parsing the CSV row by row, every time it discovers that a cell in the column `normalized_url_col` is empty, it will create a normalized version of the URL in column `url_col` and write it into the column `normalized_url_col`. The same sort of enrichnment will be done in the created column `domain_col` if the dataset does not already have domain names.
+
+```mermaid
+flowchart TB
+
+    archiveOption("--archive") --> archiveDecision{directory\nexists}
+    style archiveDecision fill:#ffff00
+    archiveDecision-->|no| noArchive[error]
+    style noArchive fill:#ff0000
+    archiveDecision -->|yes| yesArchive[continue]
+    style yesArchive fill:#00ff00
+    yesArchive --> archivePath[/archive_path/]
+    style archivePath fill:#8000fe
+    
+    yesArchive -->infileOption("--in-file")
+    infileOption --> infileQuestion{file\nexists}
+    infileQuestion-->|no| noInfile[error]
+    infileQuestion -->|yes| yesInfile[continue]
+    yesInfile --> infilePath[/infile_path/]
+    style infilePath fill:#8000fe
+    style noInfile fill:#ff0000
+    style yesInfile fill:#00ff00
+    style infileQuestion fill:#ffff00
+
+    yesInfile -->headersDecision{has\nheaders}
+    style headersDecision fill:#ffff00
+    headersDecision -->|no| noHeader[error]
+    style noHeader fill:#ff0000
+    headersDecision -->|yes| yesHeaders[continue]
+    yesHeaders --> parseHeaders[parse all\nheaders]
+    style yesHeaders fill:#00ff00
+
+    parseHeaders --> fieldnames[/infile_fieldnames/]
+    style fieldnames fill:#8000fe
+
+    parseHeaders --> idDecision{--ids in\ninfile_fieldnames}
+    style idDecision fill:#ffff00
+    idDecision -->|no| noIds[error]
+    style noIds fill:#ff0000
+    idDecision -->|yes| yesIds[continue]
+    style yesIds fill:#00ff00
+    yesIds --> setIDCol[id_col = --ids]
+    setIDCol --> returnIDCol[/id_col/]
+    style returnIDCol fill:#8000fe
+ 
+    yesIds --> urlColDecision{--urls in\ninfile_fieldnames}
+    style urlColDecision fill:#ffff00
+    urlColDecision -->|no| noURLCol[error]
+    style noURLCol fill:#ff0000
+    urlColDecision -->|yes| yesURLCol[continue]
+    style yesURLCol fill:#00ff00
+    yesURLCol --> setURLCol[url_col = --urls]
+    setURLCol --> returnURLCol[/url_col/]
+    style returnURLCol fill:#8000fe
+
+    yesURLCol --> normalizedOptionDecision{-n \nboolean}
+    style normalizedOptionDecision fill:#ffff00
+    normalizedOptionDecision -->|True| firstURLDecision{first URL in\ncolumn --urls\nis normalized}
+    style firstURLDecision fill:#ffff00
+    normalizedOptionDecision -->|False| addNormalizedURLCol["enriched_fieldnames + ['normalized_url_col']"]
+    firstURLDecision -->|yes| yesNormalizedURL[normalized_url_col = url_col]
+    yesNormalizedURL --> returnYesNormalizedURL[/normalized_url_col/]
+    style returnYesNormalizedURL fill:#8000fe
+    firstURLDecision -->|no| addNormalizedURLCol
+    addNormalizedURLCol --> setNoNormalizedURLCol["normalized_url_col = 'normalized_url_col'"]
+    setNoNormalizedURLCol --> returnNoNormalizedURL[/normalized_url_col/]
+    style returnNoNormalizedURL fill:#8000fe
+
+    makeEmptyEnrichedFieldnames["enriched_fieldnames = []"]
+    emptyEnrichedFieldnames[/enriched_fieldnames/]
+    makeEmptyEnrichedFieldnames --> emptyEnrichedFieldnames
+    emptyEnrichedFieldnames --> addNormalizedURLCol
+    emptyEnrichedFieldnames --> addDomainCol
+    addNormalizedURLCol --> returnEnrichedFieldnames[/enriched_fieldnames/]
+    addDomainCol --> returnEnrichedFieldnames[/enriched_fieldnames/]
+    style returnEnrichedFieldnames fill:#8000fe
+
+    yesURLCol --> domainsDecision{--domains\noption}
+    style domainsDecision fill:#ffff00
+    domainsDecision -->|False| addDomainCol["enriched_fieldnames + ['domain_col']"]
+    domainsDecision -->|True| domainsOption{--domains in\ninfile_fieldnames}
+    style domainsOption fill:#ffff00
+    domainsOption -->|no| addDomainCol
+    domainsOption -->|yes| setDomainCol[domain_col = --domains]
+    setDomainCol --> returnSetDomainCol[/domain_col/]
+    style returnSetDomainCol fill:#8000fe
+    addDomainCol --> setNoDomainCol["domain_col = 'domain_col'"]
+    setNoDomainCol --> returnNoDomainCol[/domain_col/]
+    style returnNoDomainCol fill:#8000fe
+```
 
 ## Parse In-File
 
@@ -200,20 +208,36 @@ Next, the program parses the entire incoming CSV file, row by row, both enrichin
 
 Enrichment steps:
 
-1. If `normalized` is False, the program normalizes the URL in `row[url_col]`.
+1. If there's no data in the column known under the variable `normalized_url_col`, the program normalizes the URL in `row[url_col]`.
 2. If there's no data in the column known under the variable `domain_col`, the program gets the domain name from the normalized URL.
-3. The program also writes these data to the relevant fields if they did not already exist in the dataset.
+3. The program returns a (potentially) modified `row` dictionary object.
 
 Parameters
-- `row` (dict) in `csv.DictReader`
+- `row` (dict) from `csv.DictReader`
 - `normalized_url_col` (str)
 - `url_col` (str)
 - `domain` (str)
+
+Return:
+- `row` (dict)
 
 ```mermaid
 flowchart LR
 subgraph Row
 row[/row/]
+end
+subgraph Domain
+    domain_col[/domain_col/]
+    domain_col -->domains{"row.get(domain_col)"}
+    row --> domains
+    style domains fill:#ffff00
+    domains --o|string| yesDom["row[domain_col]"]
+    domains -->|None| noDom["get_domain(normalized_url)"]
+    normalized_url --> noDom
+    noDom -->|update row| writeDom["row[domain_col]=domain"]
+    writeDom --> returnRow[\row\]
+    style returnRow fill:#8000fe
+    
 end
 subgraph Normalized URL
     normalized_col[/normalized_url_col/]
@@ -226,22 +250,11 @@ subgraph Normalized URL
     url_col --> notNormUrl
     normalized_url[/normalized_url/]
     notNormUrl -->|update row| writeNorm["row[normalized_url_col]=normalized_url"]
+    writeNorm --> returnRow[\row\]
+    style returnRow fill:#8000fe
     normUrl --> normalized_url
     notNormUrl --> normalized_url
 end
-subgraph Domain
-    domain_col[/domain_col/]
-    domain_col -->domains{"row.get(domain_col)"}
-    row --> domains
-    style domains fill:#ffff00
-    domains --o|string| yesDom["row[domain_col]"]
-    domains -->|None| noDom["get_domain(normalized_url)"]
-    normalized_url --> noDom
-    noDom -->|update row| writeDom["row[domain_col]=domain"]
-    
-end
-
-
 ```
 
 Archiving steps:
