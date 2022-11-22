@@ -9,15 +9,25 @@ yellow = "\033[1;33m\n"
 reset = "\033[0m"
 
 
-class Parameters(object):
-    """
-    - `archive_path` : path to directory
-    - `infile_path` : path to file
-    - `infile_fieldnames` : list of headers in file
-    - `enriched_fieldnames` : list of headers to be added to `infile_fieldnames` ("domain_col" and/or "normalized_url_col")
-    - `url_col` : string of key for the column containing URLs in file when read as `csv.DictReader` object
-    - `domain_col` string of key for the column containing domain names in file when read as `csv.DictReader` object (set to "domain_col" when the in-file did not have domain names)
-    - `normalized_url_col` : string of key for the column containing normalized_urls in file when read as `csv.DictReader` object (the value of `nonrmalized_url_col` will be the same as `url_col` if the URLs are already normalized)
+class Arguments(object):
+    """Verifies that all the CLI arguments are valid and returns parameters
+
+    Parameters:
+        archive (str): value of --archive [required], path to the archive
+        infile (str): value of --infile [required], path to the data file
+        urls (str): value of --urls [required], name of the URLs column
+        domains (str): value of --domains [optional], name of the domains column
+        n (bool): value of --n [optional], declaration of whether the URLs are normalized
+    
+    Returns:
+        Arguments().archive_path (str): path to the archive
+        Arguments().infile_path (str): path to the data file
+        Arguments().url_col (str): name of the URLs column
+        Arguments().normalized (bool): whether the URLs are normalized  *no longer important*
+        Arguments().normalized_url_col (str): either the name of the column in the data file contains normalized URLs 
+            or the name of the column in the out-file that will contain normalized URLs
+        Arguments().infile_fieldnames (list): list of column headers in data file *no longer important*
+        Arguments().enriched_fieldnames (list): list of column headers for out-file
     """
     def __init__(self, archive, infile, urls, domains, n):
         self.archive_path = archive
@@ -77,14 +87,7 @@ class Parameters(object):
 @click.option("--domains", type=str, required=False, help="Header of column containing domain names.")
 @click.option("-n", type=bool, is_flag=True, default=False, required=False, help="Flag indicating the URLs are already normalized.")
 def cli(archive, infile, urls, domains, n):
-    params = Parameters(archive, infile, urls, domains, n)
-    print(f"archive: {params.archive_path}")
-    print(f"infile: {params.infile_path}")
-    print(f"infile fieldnames: {params.infile_fieldnames}")
-    print(f"enriched fieldnames: {params.enriched_fieldnames}")
-    print(f"url col: {params.url_col}")
-    print(f"normalized col: {params.normalized_url_col}")
-    print(f"domain col: {params.domain_col}")
+    args = Arguments(archive, infile, urls, domains, n)
 
 if __name__ == "__main__":
     cli()
