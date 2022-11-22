@@ -35,13 +35,12 @@ class Arguments(object):
         Arguments().infile_fieldnames (list): list of column headers in data file
         Arguments().enriched_fieldnames (list): list of column headers for out-file *important*
     """
-    def __init__(self, archive, infile, urls, domains, n, outfile):
+    def __init__(self, archive, infile, urls, domains, n):
         self.archive_path = archive
         self.infile_path = infile
         self.url_col = urls
         self.domain_col = domains
         self.normalized = n
-        self.outfile_path = outfile
         self.normalized_url_col = None
         self.infile_fieldnames = []
         self.enriched_fieldnames = ["archive_subdirectory", "archive_timestamp"]
@@ -99,11 +98,11 @@ def generate_reader(fp):
 @click.option("--urls", type=str, required=True, help="Header of column containing URLs.")
 @click.option("--domains", type=str, required=False, help="Header of column containing domain names.")
 @click.option("-n", type=bool, is_flag=True, default=False, required=False, help="Flag indicating the URLs are already normalized.")
-@click.option("--outfile", type=str, default="outfile.csv", required=False, help="Name of or path to the file in which the enriched data will be output.")
-def cli(archive, infile, urls, domains, n, outfile):
-    args = Arguments(archive, infile, urls, domains, n, outfile)
+@click.option("--outfile", "outfile_path", type=str, default="outfile.csv", required=False, help="Name of or path to the file in which the enriched data will be output.")
+def cli(archive, infile, urls, domains, n, outfile_path):
+    args = Arguments(archive, infile, urls, domains, n)
 
-    with open(args.outfile_path, "w") as f:
+    with open(outfile_path, "w") as f:
         writer = csv.DictWriter(f, fieldnames=args.enriched_fieldnames)
         writer.writeheader()
         for row in generate_reader(args.infile_path):

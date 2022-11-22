@@ -80,12 +80,13 @@ The program `archive-html` generates two types of files.
 # Proposed Architecture
 
 ## Command Line
-The program will accept 5 arguments.
+The program will accept 6 arguments.
 - `--archive` (**required**, dir) : path to the main archive directory
-- `--infile` (**required**, file) : path to the in-file CSV
+- `--infile` (**required**, file) : path to the incoming CSV file
 - `--urls` (**required**, str) : name of column containing the URLs to be processed; if normalized URLs are in the dataset this should point to the column of the normalized URLs
 - `--domains` (*optional*, str) : name of column of the domain names, if present
 - `-n` (*optional*, bool) : True if the given URLs are already normalized
+- `--outfile` (*optional*, str) : path to the enriched CSV the program yields
 
 ```mermaid
 flowchart TB
@@ -94,6 +95,7 @@ flowchart TB
     CLI -->|"--urls"| header1(URL col. header)
     CLI -->|"--domains"| header2(domains col. header)
     CLI --o|"-n"| id[normalized/\nnot normalized]
+    CLI -->|"--outfile"| outfile[outfile]
 ```
 
 ## Parse CLI Arguments
@@ -101,14 +103,14 @@ As shown in the decision tree below, the program parses the CLI arguments to det
 
 Returns:
 - `archive_path` : path to directory
-- `infile_path` : path to file
+- `infile_path` : path to incoming data file
 - `infile_fieldnames` : list of headers in file
 - `enriched_fieldnames` : list of headers to be added to `infile_fieldnames` ("domain_col" and/or "normalized_url_col")
 - `url_col` : string of key for the column containing URLs in file when read as `csv.DictReader` object
 - `domain_col` string of key for the column containing domain names in file when read as `csv.DictReader` object (set to "domain_col" when the in-file did not have domain names)
 - `normalized_url_col` : string of key for the column containing normalized_urls in file when read as `csv.DictReader` object (the value of `nonrmalized_url_col` will be the same as `url_col` if the URLs are already normalized)
 
-When parsing the dataset, the program will call columns using strings stored in the variables `url_col`, `domain_col`, and `normalized_url_col`. The column name for the normalized URLs will be the same as that entered via the CLI in the option `--urls` (stored in `url_col`) if the URLs in the dataset are already normalized. If the URLs are not normalized, the program will create a column `normalized_url_col` and, while parsing the CSV row by row, every time it discovers that a cell in the column `normalized_url_col` is empty, it will create a normalized version of the URL in column `url_col` and write it into the column `normalized_url_col`. The same sort of enrichnment will be done in the created column `domain_col` if the dataset does not already have domain names.
+When parsing the rows in the data file, the program will call columns using strings stored in the variables `url_col`, `domain_col`, and `normalized_url_col`.
 
 ```mermaid
 flowchart TB
@@ -233,7 +235,7 @@ subgraph In-File
     reader1[(reader)] --> rowBefore[/"row (dict)"/]
 end
 subgraph Out-File
-    args -->|enriched_fieldnames| writer[(writer)]
+    args -->|enriched_fieldnames,\noutfile_path| writer[(writer)]
     rowAfter --> writeRow[write row]
     writeRow --> writer
 end
@@ -277,10 +279,11 @@ end
 
 ```mermaid
 flowchart TD
-    hash_url[hash normalized URL] --> checkDir[check archive for hash]
-    checkDir --> scrape[scrape HTML]
-    scrape --> makeDir[make a subdirectory with name of hash]
-    makeDir --> write[write HTML to file in subdirectory]
-    write --> timestamp[write timestamp to enriched CSV]
-    timestamp --> hash_name[write subdirectory name to enriched CSV]
+    pull["pull normalized URL from row[args.normalized_url_col]"] --> hash_url
+    hash_url[hash the normalized URL] --> checkDir[check the archive for a subdirectory with that hashed name]
+    checkDir --> scrape[scrape HTML from the normalized URL]
+    scrape --> makeDir[make a subdirectory with the name of the hashed URL]
+    makeDir --> write[write the scraped HTML to a file in the subdirectory]
+    write --> timestamp[update the row object with a timestamp]
+    timestamp --> hash_name[update the row object with the subdirectory name]
 ```
