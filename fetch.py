@@ -1,10 +1,15 @@
 import csv
-import click
-from exceptions import FileFormatError, CSVHeaderError
-from ural import normalize_url as ural_normalize_url
 import os
 
+import click
+from ural import normalize_url as ural_normalize_url
 
+from archive import archive_row
+from enrich import enrich_row
+from exceptions import CSVHeaderError, FileFormatError
+
+
+# Color codes for error messages
 yellow = "\033[1;33m\n"
 reset = "\033[0m"
 
@@ -30,12 +35,13 @@ class Arguments(object):
         Arguments().infile_fieldnames (list): list of column headers in data file
         Arguments().enriched_fieldnames (list): list of column headers for out-file *important*
     """
-    def __init__(self, archive, infile, urls, domains, n):
+    def __init__(self, archive, infile, urls, domains, n, outfile):
         self.archive_path = archive
         self.infile_path = infile
         self.url_col = urls
         self.domain_col = domains
         self.normalized = n
+        self.outfile_path = outfile
         self.normalized_url_col = None
         self.infile_fieldnames = []
         self.enriched_fieldnames = ["archive_subdirectory", "archive_timestamp"]
@@ -48,7 +54,7 @@ class Arguments(object):
         if not os.path.isfile(self.infile_path):
             raise FileNotFoundError(f"{yellow}{self.infile_path} is not a file.{reset}")
 
-        with open(self.infile_path) as f:
+        with open(self.infile_path, "r") as f:
             # Verify that the CSV can be opened with headers
             try:
                 reader = csv.DictReader(f)
@@ -81,14 +87,29 @@ class Arguments(object):
             self.enriched_fieldnames.extend(self.infile_fieldnames)
 
 
+def generate_reader(fp):
+    """Yields rows from the CSV reader."""
+    with open(fp, "r") as csvfile:
+        yield from csv.DictReader(csvfile)
+
+
 @click.command()
 @click.option("--archive", type=click.Path(exists=True), required=True, help="Path to archive in which subdirectories of archived HTML will be stored.")
 @click.option("--infile", type=click.Path(exists=True), required=True, help="Path to the CSV file containing the URLs to be processed.")
 @click.option("--urls", type=str, required=True, help="Header of column containing URLs.")
 @click.option("--domains", type=str, required=False, help="Header of column containing domain names.")
 @click.option("-n", type=bool, is_flag=True, default=False, required=False, help="Flag indicating the URLs are already normalized.")
-def cli(archive, infile, urls, domains, n):
-    args = Arguments(archive, infile, urls, domains, n)
+@click.option("--outfile", type=str, default="outfile.csv", required=False, help="Name of or path to the file in which the enriched data will be output.")
+def cli(archive, infile, urls, domains, n, outfile):
+    args = Arguments(archive, infile, urls, domains, n, outfile)
+
+    with open(args.outfile_path, "w") as f:
+        writer = csv.DictWriter(f, fieldnames=args.enriched_fieldnames)
+        writer.writeheader()
+        for row in generate_reader(args.infile_path):
+            row = enrich_row(args, row)
+            row = archive_row(args, row)
+            writer.writerow(row)
 
 if __name__ == "__main__":
     cli()
