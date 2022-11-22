@@ -202,16 +202,20 @@ end
 
 ```python
 class Parameters(object):
-    """Realizes the decision tree in the diagram above"""
+    """Realizes the decision tree in the diagram above,
+        and returns the following parameters. Those that
+        are important to later functions are marked with 
+        a comment.
+    """
     def __init__(self, archive, infile, urls, domains, n)
-    self.archive_path = archive  # IMPORTANT
-    self.infile = infile  # IMPORTANT
-    self.url_col = urls
-    self.self.domain_col = domains  # IMPORTANT
-    self.normalized = n
-    self.normalized_url_col = None  # IMPORTANT
-    self.infile_fieldnames = []
-    self.enriched_fieldnames = []  # IMPORTANT
+        self.archive_path = archive  # IMPORTANT
+        self.infile = infile  # IMPORTANT
+        self.url_col = urls
+        self.self.domain_col = domains  # IMPORTANT
+        self.normalized = n
+        self.normalized_url_col = None  # IMPORTANT
+        self.infile_fieldnames = []
+        self.enriched_fieldnames = []  # IMPORTANT
 
 ```
 
