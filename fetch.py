@@ -10,7 +10,8 @@ reset = "\033[0m"
 
 
 class Arguments(object):
-    """Verifies that all the CLI arguments are valid and returns parameters
+    """Verifies that all the CLI arguments are valid and assigns values to key parameters
+        necessary for functions later in the workflow.
 
     Parameters:
         archive (str): value of --archive [required], path to the archive
@@ -20,14 +21,14 @@ class Arguments(object):
         n (bool): value of --n [optional], declaration of whether the URLs are normalized
     
     Returns:
-        Arguments().archive_path (str): path to the archive
-        Arguments().infile_path (str): path to the data file
-        Arguments().url_col (str): name of the URLs column
-        Arguments().normalized (bool): whether the URLs are normalized  *no longer important*
+        Arguments().archive_path (str): path to the archive *important*
+        Arguments().infile_path (str): path to the data file *important*
+        Arguments().url_col (str): name of the URLs column *important*
+        Arguments().normalized (bool): whether the URLs are normalized
         Arguments().normalized_url_col (str): either the name of the column in the data file contains normalized URLs 
-            or the name of the column in the out-file that will contain normalized URLs
-        Arguments().infile_fieldnames (list): list of column headers in data file *no longer important*
-        Arguments().enriched_fieldnames (list): list of column headers for out-file
+            or the name of the column in the out-file that will contain normalized URLs *important*
+        Arguments().infile_fieldnames (list): list of column headers in data file
+        Arguments().enriched_fieldnames (list): list of column headers for out-file *important*
     """
     def __init__(self, archive, infile, urls, domains, n):
         self.archive_path = archive
@@ -37,7 +38,7 @@ class Arguments(object):
         self.normalized = n
         self.normalized_url_col = None
         self.infile_fieldnames = []
-        self.enriched_fieldnames = []
+        self.enriched_fieldnames = ["archive_subdirectory", "archive_timestamp"]
 
         # Verify that the archive is a directory
         if not os.path.isdir(self.archive_path):
