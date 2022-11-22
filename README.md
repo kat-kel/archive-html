@@ -223,58 +223,49 @@ class Parameters(object):
 
 Next, the program parses the entire incoming CSV file, row by row, both enriching the row's URL as well as fetching and archiving its HTML.
 
-Enrichment steps:
+```mermaid
+flowchart TD
+subgraph Step 1. Parse CLI
+args[/args/]
+end
+subgraph In-File
+    args -->|infile_path| reader1
+    reader1[(reader)] --> rowBefore[/"row (dict)"/]
+end
+subgraph Out-File
+    args -->|enriched_fieldnames| writer[(writer)]
+    rowAfter --> writeRow[write row]
+    writeRow --> writer
+end
+subgraph Step 2. Enrich
+    rowBefore --> enrichment[enrich URL] --> rowMiddle[/"row (dict)"/]
+    ural(URAL) --> enrichment
+    args -->|url_col,\nnormalized_url_col\ndomain_col| enrichment
+    style ural fill:#0000fe
+end
+subgraph Step 3. Archive
+    rowMiddle --> archive1[archive URL] --> rowAfter[/"row (dict)"/]
+    minet(Minet) --> archive1
+    args -->|normalized_url_col| archive1
+    style minet fill:#0000fe
+end
+subgraph Legend
+    iterable[(iterable)]
+    object[/object/]
+    tools(external\ntools)
+    style tools fill:#0000fe
+    process[process]
+end
+```
+---
+### Enrichment steps:
 
 1. If there's no data in the column known under the variable `normalized_url_col`, the program normalizes the URL in `row[url_col]`.
 2. If there's no data in the column known under the variable `domain_col`, the program gets the domain name from the normalized URL.
 3. The program returns a (potentially) modified `row` dictionary object.
 
-Parameters
-- `row` (dict) from `csv.DictReader`
-- `normalized_url_col` (str)
-- `url_col` (str)
-- `domain` (str)
-
-Return:
-- `row` (dict)
-
-```mermaid
-flowchart LR
-subgraph Row
-row[/row/]
-end
-subgraph Domain
-    domain_col[/domain_col/]
-    domain_col -->domains{"row.get(domain_col)"}
-    row --> domains
-    style domains fill:#ffff00
-    domains --o|string| yesDom["row[domain_col]"]
-    domains -->|None| noDom["get_domain(normalized_url)"]
-    normalized_url --> noDom
-    noDom -->|update row| writeDom["row[domain_col]=domain"]
-    writeDom --> returnRow[/row/]
-    style returnRow fill:#8000fe
-    
-end
-subgraph Normalized URL
-    normalized_col[/normalized_url_col/]
-    url_col[/url_col/]
-    row --> normalized
-    normalized_col --> normalized{"row.get(normalized_url_col)"}
-    style normalized fill:#ffff00
-    normalized -->|string| normUrl["row[normalized_url_col]"]
-    normalized -->|None| notNormUrl["normalize_url(row[url_col])"]
-    url_col --> notNormUrl
-    normalized_url[/normalized_url/]
-    notNormUrl -->|update row| writeNorm["row[normalized_url_col]=normalized_url"]
-    writeNorm --> returnRow
-    style returnRow fill:#8000fe
-    normUrl --> normalized_url
-    notNormUrl --> normalized_url
-end
-```
-
-Archiving steps:
+---
+### Archiving steps:
 
 3. The program creates a hash of the normalized URL.
 4. It then searches in the archive directory for any sub-directories bearing that name.
@@ -283,11 +274,6 @@ Archiving steps:
 5. If the call is successful, the program attempts to scrape the HTML from the page and write the response to a file in the subdirectory.
 6. The current time is recorded and given to the field `archive_timestamp`.
 7. The hash of the normalized URL is given to the field `archive_subdirectory`.
-
-Parameters:
-- `row` (dict) in `csv.DictReader`
-- `archive` (str)
-- `normalized_url_col` (str)
 
 ```mermaid
 flowchart TD
