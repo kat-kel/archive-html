@@ -64,7 +64,7 @@ All data existing in the in-file will be reproduced in the enriched out-file. Th
 ## Output
 The program `archive-html` generates two types of files. 
 
-1. First, it produces an enriched CSV, which rewrites all the existing data from the in-file and adds data about the archived HTML. In the case of a simple in-file with a raw URL (https://medialab.sciencespo.fr/activites/epo/) and its ID (tcbeehb0040dumd), the out-file would look like the following:
+1. First, it produces an enriched CSV, which rewrites all the existing data from the in-file and adds data about the archived HTML. In the case of a simple in-file with a raw URL (https://medialab.sciencespo.fr/activites/epo/), the out-file would look like the following:
 
 |normalized_url|domain|archive_subdirectory|archive_timestamp|
 |--|--|--|--|
