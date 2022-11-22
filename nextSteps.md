@@ -57,7 +57,7 @@ Create a new branch on which to develop the new `enrich_row()` function. Give it
 
 ## Step 3.
 
-Complete the function `enrich_row()` in the module [enrich.py](enrich.py) so that it returns a dictionary `row` object with values in the keys `normalized_url_col` and `domain`. Do not overwrite these values if the row's dictionary already has them (aka, if the data file already had the normalization and domain name for the URL in that row).
+Complete the function `enrich_row()` in the module [enrich.py](enrich.py) so that it returns a dictionary `row` object with values in the keys `normalized_url_col` and `domain_col`. Do not overwrite these values if the row's dictionary already has them (aka, if the data file already had the normalization and domain name for the URL in that row).
 
 Make use of URAL's functions `normalize_url()` and `get_domain()`.
 
