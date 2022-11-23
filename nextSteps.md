@@ -4,9 +4,9 @@
 
 1. Cone this Git repository.
 2. Create a virtual environment and activate it.
-3. Install the dependencies: `click`, `minet`, `pylint`, and `ural`
+3. Install the dependencies: `click`, `minet`, `pylint`, `pywebcopy`, `ural`
 ```bash
-$ pip install click minet pylint ural
+$ pip install click minet pylint pywebcopy ural
 ```
 
 ## Step 1.
