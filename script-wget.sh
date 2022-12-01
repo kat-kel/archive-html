@@ -3,7 +3,7 @@
  xsv select fakenews_url,index df_urls_v2.csv |
    xsv behead | 
    while read line;
-   do;
+   do
    url=$(echo $line | xsv select 1); id=$(echo $line | xsv select 2); wget -E -H -k -K -p $url -o log_$id; cat log_$id |
    grep "Sauvegarde" |
    head -1 > /Users/ines.girard/Dev/archive-html/wget_df_test/name_archive/name_$id.csv |
