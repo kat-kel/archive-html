@@ -6,33 +6,82 @@ The program `archive-html` takes a list (CSV file) of URLs and enriches each row
     - normalized version of the URL
     - domain name
 2. **data about the archived HTML**:
-    - name of a sub-directory which contains a file of the page's scraped HTML
-    - timestamp of when the HTML was scraped and archived
+    - hash of the URL, which is (a) the file name of the HTML fetched with minet and (b) identifier for the archived page's log and paths files.
+    - timestamp of when minet fetched the HTML
+    - timestamp of when the entire page was logged in the archive 
 
-# Proposed Data Structure
+# Workflow
 
-From the Command Line (CLI), the user provides (1) a path to the archive which will store the scraped HTML, (2) a path to the in-file which contains the URLs as well as (3) the header name of that mandatory column.
+There are 3 stages of the archiving process.
+
+Step 1. The Python script's CLI command `fetch` (1) cleans the data by normalizing the URL and determining the domain name, (2) hashes the URL with the same `md5` hash that minet uses, and (3) uses minet to fetch the HTML, which minet stores in a file named for the hashed URL. The result of this first step is an updated CSV file with the fields `normalized_url`, `domain`, `url_hash`, and `fetch_timestamp`.
+
+Step 2. The bash script parses the updated file (outfile) and pulls data from the `url` and `url_hash` fields. It uses the bash command `wget` to archive each URL and saves the `wget` log in a file ending with the URL's hash, i.e. `log_63ae9729913978917c258e336579d9f4`. The script then appends the log file with a line declaring the time when the `wget` command was called. Finally, before moving onto the next URL, the bash script parses the log and extracts all the file paths `wget` created for the URL's archive, i.e. `paths_63ae9729913978917c258e336579d9f4`. (The first line of the `paths_` file is the web page's index.html)
+
+Step 3. The python script's CLI command archive-time parses the last line of `log_` file, on which the archive's timestamp was recorded, and adds that data (`archive_timestamp`) to the CSV file.
 
 ```mermaid
 flowchart LR
-    start[CLI] --> archive[(archive)]
-    start[CLI] --> cli2[/in-file/]
-    archive[(archive)] --- sub[sub-directory] --- html[/html/]
-    cli2[/in-file/] -->|hash of normalized URL| sub[sub-directory]
-    cli2[/in-file/] -->|scraped URL| html[/html/]
-    cli2[/in-file/] --> outfile[/out-file/]
+subgraph fetch
+    start[cli.py fetch]
+    style start fill:#f96
+
+    parsefile[parse file]
+    infile[/in-file\nCSV/]
+    minetfetch[fetch URL]
+    fetchhtml[/hash.html/]
+    hash[hash normalized URL]
+    outfile[/outfile\nCSV/]
+
+    start--> parsefile
+    parsefile<-.-|read\nall fields|infile
+    parsefile-->minetfetch
+    minetfetch-->fetchhtml
+    parsefile-->hash
+    minetfetch-->|write\nfetch_timestamp|outfile
+    hash-->|write\nurl_hash, all fields|outfile
+end
+
+fetch-->wget
+wget-->log
+
+subgraph wget
+    wgetscript[bash script]
+    style wgetscript fill:#f96
+
+    
+    bashparseoutfile[parse outfile]
+    wgetlog[/LOG_hash\ntxt/]
+    wgetpaths[/PATHS_hash\ntxt/]
+    wgettree[archive URL]
+    archivedir[(archive)]
+
+    wgetscript-->bashparseoutfile
+    bashparseoutfile<-.-|read\nurl, url_hash|outfile
+    bashparseoutfile-->wgettree
+    bashparseoutfile-->wgetpaths
+    bashparseoutfile-->wgetlog
+    archivedir---wgettree
+end
+
+subgraph log
+    last[cli.py archive-time]
+    style last fill:#f96
+
+    parselog[parse log]
+    parseoutfile[parse outfile]
+    finaloutfile[/outfile\nCSV/]
+
+    last-->parselog
+    last-->parseoutfile
+    parselog<-.-|read\narchive_timestamp|wgetlog
+    parselog-->|write\narchive_timestamp|finaloutfile
+    parseoutfile<-.-|read\nall fields|outfile
+    parseoutfile-->|write\nall fields|finaloutfile
+end
+
 ```
 
-The name of each sub-directory in the archive is a hash of the normalized URL, which guarantees that the archive does not contain duplicate archives of the same URL.
-```mermaid
-flowchart TB
-    subgraph archive architecture
-    id1[(archive)] --- id2[url_hash1]
-    id1[(archive)] --- id3[url_hash2]
-    id2[url_hash1] --- id4[/html/]
-    id3[url_hash2] --- id5[/html/]
-    end
-```
 The normalized URL is hashed using Python's native `md5` package.
 
 ```python
