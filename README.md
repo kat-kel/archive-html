@@ -43,3 +43,28 @@ $ python cli.py archive-timestamp PATH/TO/DATA.csv ARCHIVE/DIRECTORY/
 1. Iterate through files in `ARCHIVE/DIRECTORY` and extract file paths for all logs in the archive.
 2. Extract the timestamp from the `wget` log and add it to the `archive_timestamp` column in the CSV.
 
+# In-Files & Out-Files
+```mermaid
+flowchart TD
+
+subgraph log
+    loginfile["|id|url|normalized_url|hash|fetch_timestamp|\nCSV"]
+    logoutfile["|id|url|normalized_url|hash|fetch_timestamp|archive_timestamp|\nCSV"]
+    loginfile-->|yields|logoutfile
+end
+
+subgraph wget
+    wgetinfile["|id|url|normalized_url|hash|fetch_timestamp|\nCSV"]
+    wgetoutfile[/log_hash/]
+    wgetinfile-->|yields|wgetoutfile
+end
+
+subgraph fetch
+    fetchinfile["|id|url|normalized_url|\nCSV"]
+    fetchoutfile["|id|url|normalized_url|hash|fetch_timestamp|\nCSV"]
+    fetchinfile-->|yields|fetchoutfile
+end
+
+fetch-->wget
+wget-->log
+```
