@@ -41,5 +41,5 @@ $ script-wget.sh PATH/TO/DATA.csv
 $ python cli.py archive-timestamp PATH/TO/DATA.csv ARCHIVE/DIRECTORY/
 ```
 1. Iterate through files in `ARCHIVE/DIRECTORY` and extract file paths for all logs in the archive.
-2. Extract the timestamp from the `wget` log and add it to that column `archive_timestamp` column in the CSV.
+2. Extract the timestamp from the `wget` log and add it to the `archive_timestamp` column in the CSV.
 
