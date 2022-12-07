@@ -11,17 +11,20 @@ xsv select url,normalized_url_hash $1 |
     url=$(echo $line | xsv select 1) # assigne variable for the url
     normalized_url_hash=$(echo $line | xsv select 2) # assigne variable for hash 
     logfile="${normalized_url_hash}_log"  # assign variable for log file
-    timestamp=$(date +"%F %H:%M:%S") # assign variable for timestamp
+    #pathsfile="${normalized_url_hash}_paths"  # assign variable for path file
+    # timestamp=$(date +"%F %H:%M:%S") # assign variable for timestamp --> not usefull because already the first line of the logfile
 
     cd $ARCHIVEDIR  # go into the archive
       # do everything you need to do
       wget -E -H -k -K -p ${url} -o ${normalized_url_hash}_log
-      pathsfile=$(cat ${normalized_url_hash}_log | grep "Sauvegarde" | head -1 | tr '«' ',' | tr '»' ' ' | cut -d',' -f2)
+      main_pathfile=$(cat ${normalized_url_hash}_log | grep "Sauvegarde" | head -1 | tr '«' ',' | tr '»' ' ' | cut -d',' -f2)  
       echo "url: ${url}" # url of the fake news 
       echo "logfile: ${logfile}" # hash 
-      echo "path_html: ${pathsfile}" 
-      echo "timestamp:${timestamp}"  # timestamp of the wget command 
+      echo "path_html: ${main_pathfile}" # path of the saved html
+      echo "timestamp:${timestamp}" # timestamp of the wget command 
+      # echo "URL archived at: ${timestamp}" >> logfile 
       echo "" 
+      cat ${normalized_url_hash}_log | grep "Sauvegarde" | tr '«' ',' | tr '»' ' ' | cut -d',' -f2 > ${normalized_url_hash}_paths
 
     cd .. # go back to the top-level, where the script is saved / from where the script is deployed
     done
